@@ -111,7 +111,20 @@ Raw data: [`results/rgb_full/`](results/rgb_full/)
 
 **Why can too many workers slow things down?** Each process worker carries its own interpreter and buffers, costing up to 159 MB, and all of them compete for 2 physical cores. When the queue is already full, that cost buys nothing.
 
-**Does multithreading help?** No. `thread x8` had the lowest GPU utilisation of any configuration, consistent with decode threads contending with the main thread for the GIL and delaying kernel launches. On a shorter run where the GPU had slack, the same configuration was **13.8% slower** than sequential after normalising for clock speed.
+**Does multithreading help?** No, and the context-switch counters show why. Threads share one GIL, so every handoff costs a context switch:
+
+| Configuration | Context switches/s | vs sequential |
+|---|---:|---:|
+| sequential | 2,531 | – |
+| thread x1 | 3,126 | +23.5% |
+| thread x2 | 3,319 | +31.1% |
+| thread x4 | 3,633 | +43.5% |
+| **thread x8** | **4,213** | **+66.4%** |
+| process x1 … x8 | 2,864–2,912 | +13–15%, flat |
+
+Context switching **rises with thread count but is flat across process count**, because each worker process has its own interpreter and its own GIL, so they never contend for one. `thread x8` also had the lowest GPU utilisation of any configuration. On a shorter run where the GPU had slack, the same configuration was **13.8% slower** than sequential after normalising for clock speed.
+
+**What does worker startup cost?** On Linux with `fork`, very little: 0.11 s sequential rising to 0.65 s for 8 worker processes, and the first epoch is only 0.1–0.8% slower than the steady-state epoch. This is **OS-dependent**: on Windows, which must `spawn`, a comparable published benchmark paid 5.5 s for 2 workers and 11.1 s for 4, enough to change which configuration wins a short training run. On `fork` that trade-off does not arise.
 
 **What is the bottleneck: CPU, RAM, storage or GPU?** The **GPU**, decisively: 99.8% utilisation, 0.2% idle. RAM and storage are not constraints, and the CPU is only 0.88 cores busy in sequential out of 4 logical.
 
@@ -156,13 +169,16 @@ To benchmark the other dataset, change `DATASET` and save another version. Each 
 ├── src/
 │   ├── cell_verify.py                # step 1, identical to notebook cell 1
 │   └── layerB_v2.py                  # step 2, identical to notebook cell 2
-└── results/
-    └── rgb_full/                     # EuroSAT RGB, 27k, 2 epochs, n=3
-        ├── summary.md
-        └── run_log.txt
+└── results/                          # see results/README.md
+    ├── specs.json
+    ├── rgb_full/                     # PRIMARY: RGB, 27k, 2 epochs, n=3
+    ├── rgb_smoke/                    # the 1,280-image check run
+    └── superseded/                   # earlier harness versions, do not cite
 ```
 
 `src/` holds the same code as plain scripts so it can be reviewed and diffed. The notebook cells are byte-identical to these files.
+
+All 36 runs completed with `status=ok` and no duplicates. `summary.csv` was independently recomputed from `runs.csv` with **0 mismatches**, and `config.json` confirms the controls were applied rather than merely intended. Details in [`results/README.md`](results/README.md).
 
 ---
 

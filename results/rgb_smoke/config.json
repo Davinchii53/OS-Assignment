@@ -1,0 +1,107 @@
+{
+  "mode": "SMOKE",
+  "dataset": "RGB",
+  "n_images": 1280,
+  "classes": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "epochs": 2,
+  "repeats": 1,
+  "batch": 64,
+  "seed": 42,
+  "cooldown_s": 2,
+  "thread_counts": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "process_counts": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8
+  ],
+  "model": "resnet18, conv1 3x3 stride 1, maxpool removed",
+  "optimizer": "SGD lr 0.01 momentum 0.9",
+  "pin_memory": true,
+  "prefetch_factor": 2,
+  "persistent_workers": true,
+  "cudnn_benchmark": true,
+  "gpu_telemetry_backend": "nvml",
+  "sample_hz": 4.0,
+  "batches_identical_across_methods": true,
+  "randomised_order": true,
+  "baseline_decode_ips": 436.36,
+  "baseline_train_ips": 315.03,
+  "loading_share": 0.4193,
+  "amdahl_ceiling": 1.722,
+  "plan": [
+    [
+      "process",
+      3,
+      0
+    ],
+    [
+      "thread",
+      4,
+      0
+    ],
+    [
+      "thread",
+      2,
+      0
+    ],
+    [
+      "process",
+      4,
+      0
+    ],
+    [
+      "process",
+      1,
+      0
+    ],
+    [
+      "process",
+      2,
+      0
+    ],
+    [
+      "process",
+      6,
+      0
+    ],
+    [
+      "thread",
+      8,
+      0
+    ],
+    [
+      "sequential",
+      0,
+      0
+    ],
+    [
+      "thread",
+      1,
+      0
+    ],
+    [
+      "process",
+      8,
+      0
+    ]
+  ]
+}

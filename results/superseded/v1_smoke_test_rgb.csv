@@ -1,0 +1,2 @@
+platform,device,gpu,cores_physical,cores_logical,batch,train_ips,decode_ips,loading_fraction,amdahl_smax
+kaggle,cuda,Tesla T4,2,4,64,365.19,493.52,0.74,3.846
