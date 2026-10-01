@@ -1,0 +1,53 @@
+{
+  "platform": "sandbox",
+  "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+  "cpu_cores_physical": 4,
+  "cpu_cores_logical": 8,
+  "hyperthreading": true,
+  "ram_total_gb": 30.82,
+  "gpu_available": false,
+  "gpu_name": null,
+  "gpu_count": 0,
+  "gpu_vram_gb": null,
+  "gpu_capability": null,
+  "os": "Linux 6.1.186-228.374.amzn2023.x86_64",
+  "python": "3.11.15",
+  "python_implementation": "CPython",
+  "gil_enabled": true,
+  "framework": "pytorch 2.14.0+cpu",
+  "torchvision": "0.29.0+cpu",
+  "numpy": "2.4.6",
+  "cuda": null,
+  "cudnn": null,
+  "mp_start_method": "fork",
+  "datasets": {
+    "RGB": {
+      "root": "data/ext/EuroSAT_RGB",
+      "files": 27000,
+      "classes": 10,
+      "shape": [
+        64,
+        64,
+        3
+      ],
+      "dtype": "uint8",
+      "avg_file_kb": 3.32,
+      "total_mb": 87.6
+    },
+    "MS": {
+      "root": "data/ext/EuroSAT_MS",
+      "files": 27000,
+      "classes": 10,
+      "shape": [
+        64,
+        64,
+        13
+      ],
+      "dtype": "uint16",
+      "avg_file_kb": 104.73,
+      "total_mb": 2761.4
+    }
+  },
+  "disk_total_gb": 124.9,
+  "disk_free_gb": 82.0
+}

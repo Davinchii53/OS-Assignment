@@ -39,19 +39,44 @@ Classes are mildly imbalanced, 2,000–3,000 images each. The 31x difference in 
 
 ## Hardware
 
-| | Kaggle (used for the results here) |
-|---|---|
-| CPU | Intel Xeon @ 2.00 GHz |
-| Cores | **2 physical / 4 logical** (hyperthreaded) |
-| RAM | 31.4 GB |
-| GPU | Tesla T4, 14.56 GB VRAM, capability 7.5 |
-| OS | Linux 6.12, `fork` start method |
-| Python / PyTorch | 3.12 / 2.10.0+cu128 |
-| Batch size | 64 |
-| Epochs | 2 |
-| `torch_num_threads` | 2 (pinned) |
+Two tiers were used deliberately, because the bottleneck differs between them. Every value below was captured programmatically rather than typed by hand:
 
-**Physical and logical core counts are both reported on purpose.** `lscpu` fails inside containers, so the notebook parses `/proc/cpuinfo`. Reporting only the logical count (4) would make a speedup plateau near 2 look like an unexplained failure.
+| Tier | Authoritative source |
+|---|---|
+| Sandbox | [`results/specs_sandbox.json`](results/specs_sandbox.json), plus [`results/layerA/environment.json`](results/layerA/environment.json) written by the benchmark itself |
+| Kaggle | [`results/rgb_full/environment.json`](results/rgb_full/environment.json) written by the benchmark during the recorded run; [`results/specs_kaggle.json`](results/specs_kaggle.json) is an earlier capture kept for the GPU driver and capability fields |
+
+The two `specs_*.json` files use slightly different key names, because the Kaggle one predates the current verification script. The per-run `environment.json` files are the ones to trust, since each was written by the harness during the run it describes.
+
+| | **Tier 1 — Sandbox** | **Tier 2 — Kaggle** |
+|---|---|---|
+| Role | Layer A, preprocessing only | Layer B, end-to-end training |
+| CPU | Intel Xeon Platinum 8488C | Intel Xeon @ 2.00 GHz |
+| **CPU cores / threads** | **4 physical / 8 logical** | **2 physical / 4 logical** |
+| RAM | 30.8 GB | 31.4 GB |
+| **GPU** | **none** | **Tesla T4 ×2**, 14.56 GB VRAM each, capability 7.5 |
+| Disk | 125 GB NVMe, ~1.3 GB/s cold read | Kaggle managed storage |
+| Operating system | Linux 6.1 (Amazon Linux 2023) | Linux 6.12 |
+| `mp` start method | `fork` | `fork` |
+| Python version | 3.11.15 | 3.12.13 |
+| **Deep learning framework** | PyTorch 2.14.0+cpu | PyTorch 2.10.0+cu128, CUDA 12.8, cuDNN 9.1 |
+| NumPy | 2.4.6 | 2.0.2 |
+| **Dataset size** | 27,000 images (both variants) | 27,000 images |
+| **Batch size** | n/a — no model | **64** |
+| **Number of epochs** | n/a — no model | **2** |
+| Thread pinning | `OMP_NUM_THREADS=1` | `torch_num_threads=2`, `OMP_NUM_THREADS=2` |
+| Worker counts tested | 1, 2, 4, 8, 16 | 1, 2, 3, 4, 6, 8 |
+| Repeats | 3 | 3 |
+
+### Why two tiers, and why the specs matter
+
+**Core count sets the ceiling.** The sandbox has twice the physical cores, which is why its scaling curve has five usable points (1→16) while Kaggle's saturates after two. Any worker-scaling result is meaningless without the core count beside it.
+
+**Physical and logical counts are both reported on purpose.** `lscpu` fails inside containers, so both tiers parse `/proc/cpuinfo` instead. Reporting only the logical count would make a plateau near the physical count look like an unexplained failure.
+
+**Single-core speed differs by 3.45×.** The sandbox decodes RGB at 2,585 img/s per core against Kaggle's ~590. Same code, same data. This is the single clearest demonstration that parallel-computing results cannot be separated from the hardware they were measured on.
+
+**`OMP_NUM_THREADS` is not a detail.** NumPy's `mean`/`std` are thread-parallel, so leaving it unpinned makes a "1 worker" run secretly multi-core. It is set to 1 in Layer A to isolate the thread/process comparison, and to 2 in Layer B to match Kaggle's physical cores. Decode throughput measured 459 img/s at `OMP=2` versus 590 at `OMP=4` on the same machine — the thread setting must be reported with every figure.
 
 ---
 
