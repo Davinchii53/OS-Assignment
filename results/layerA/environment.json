@@ -1,0 +1,21 @@
+{
+  "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+  "cores_physical": 4,
+  "cores_logical": 8,
+  "ram_total_gb": 30.82,
+  "python": "3.11.15",
+  "numpy": "2.4.6",
+  "omp_num_threads": "1",
+  "os": "Linux 6.1.186-228.374.amzn2023.x86_64",
+  "quick": false,
+  "repeats": 3,
+  "worker_counts": [
+    1,
+    2,
+    4,
+    8,
+    16
+  ],
+  "chunksize": 64,
+  "seed": 42
+}
