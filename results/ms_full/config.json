@@ -1,0 +1,241 @@
+{
+  "version": "2.1",
+  "mode": "FULL",
+  "dataset": "MS",
+  "n_images": 27000,
+  "classes": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "epochs": 2,
+  "repeats": 3,
+  "batch": 64,
+  "seed": 42,
+  "cooldown_s": 3,
+  "thread_counts": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "process_counts": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8
+  ],
+  "model": "resnet18, conv1 3x3 stride 1, maxpool removed",
+  "optimizer": "SGD lr 0.01 momentum 0.9",
+  "pin_memory": true,
+  "pin_ablation": true,
+  "heat_soak": {
+    "seconds": 132.9,
+    "temp_start": 41.0,
+    "temp_end": 79.0,
+    "clock_start": 750.0,
+    "clock_end": 780.0
+  },
+  "prefetch_factor": 2,
+  "persistent_workers": true,
+  "cudnn_benchmark": true,
+  "gpu_telemetry_backend": "nvml",
+  "sample_hz": 4.0,
+  "batches_identical_across_methods": true,
+  "randomised_order": true,
+  "baseline_decode_ips": 335.83,
+  "baseline_train_ips": 322.49,
+  "loading_share": 0.4899,
+  "amdahl_ceiling": 1.96,
+  "plan": [
+    [
+      "process",
+      2,
+      0
+    ],
+    [
+      "thread",
+      8,
+      0
+    ],
+    [
+      "thread",
+      1,
+      0
+    ],
+    [
+      "process",
+      3,
+      0
+    ],
+    [
+      "process",
+      4,
+      0
+    ],
+    [
+      "process",
+      1,
+      0
+    ],
+    [
+      "process",
+      8,
+      0
+    ],
+    [
+      "thread",
+      2,
+      0
+    ],
+    [
+      "thread",
+      4,
+      0
+    ],
+    [
+      "sequential",
+      0,
+      0
+    ],
+    [
+      "sequential_nopin",
+      0,
+      0
+    ],
+    [
+      "process",
+      6,
+      0
+    ],
+    [
+      "process",
+      6,
+      1
+    ],
+    [
+      "sequential_nopin",
+      0,
+      1
+    ],
+    [
+      "process",
+      4,
+      1
+    ],
+    [
+      "thread",
+      2,
+      1
+    ],
+    [
+      "process",
+      8,
+      1
+    ],
+    [
+      "process",
+      1,
+      1
+    ],
+    [
+      "process",
+      3,
+      1
+    ],
+    [
+      "thread",
+      8,
+      1
+    ],
+    [
+      "process",
+      2,
+      1
+    ],
+    [
+      "thread",
+      1,
+      1
+    ],
+    [
+      "thread",
+      4,
+      1
+    ],
+    [
+      "sequential",
+      0,
+      1
+    ],
+    [
+      "thread",
+      8,
+      2
+    ],
+    [
+      "thread",
+      4,
+      2
+    ],
+    [
+      "process",
+      8,
+      2
+    ],
+    [
+      "sequential",
+      0,
+      2
+    ],
+    [
+      "process",
+      2,
+      2
+    ],
+    [
+      "process",
+      4,
+      2
+    ],
+    [
+      "thread",
+      2,
+      2
+    ],
+    [
+      "thread",
+      1,
+      2
+    ],
+    [
+      "sequential_nopin",
+      0,
+      2
+    ],
+    [
+      "process",
+      6,
+      2
+    ],
+    [
+      "process",
+      3,
+      2
+    ],
+    [
+      "process",
+      1,
+      2
+    ]
+  ]
+}
