@@ -1,0 +1,11 @@
+{
+  "platform": "kaggle",
+  "cpu_model": "AMD EPYC 7B12",
+  "cores_physical": 2,
+  "cores_logical": 4,
+  "ram_total_gb": 31.35,
+  "python": "3.12.13",
+  "numpy": "2.0.2",
+  "omp_num_threads": "1",
+  "os": "Linux 6.18.48+"
+}

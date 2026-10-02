@@ -1,0 +1,15 @@
+task,mode,workers,seconds,speedup
+pure_python,sequential,0,0.3687,1.0
+pure_python,thread,2,0.391,0.943
+pure_python,thread,4,0.4238,0.87
+pure_python,thread,8,0.3921,0.94
+pure_python,process,2,0.2142,1.721
+pure_python,process,4,0.2034,1.813
+pure_python,process,8,0.2418,1.525
+sha256,sequential,0,0.4725,1.0
+sha256,thread,2,0.2449,1.929
+sha256,thread,4,0.1347,3.508
+sha256,thread,8,0.1465,3.225
+sha256,process,2,0.2584,1.829
+sha256,process,4,0.1624,2.91
+sha256,process,8,0.1834,2.577
