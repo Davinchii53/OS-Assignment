@@ -20,6 +20,14 @@ Four configurations were **statistically slower** than sequential: `thread x4` (
 
 > So the assumption *"more threads or processes means faster"* is **rejected** for this workload. Extra workers only help when data loading is the bottleneck, and here it is not.
 
+But that is only half the story. Remove the GPU and the identical decoding code reaches **5.03×**:
+
+![Parallelism only helps at the bottleneck](figures/05_bottleneck_decides.png)
+
+The right panel explains both outcomes. On RGB the GPU is already 99.8% busy with no workers at all, so no loader can contribute. On MS it sits at 93.7%, leaving 6.3% of idle time for workers to recover — which is exactly the small gain on the left.
+
+**The central principle: parallelism only helps at the bottleneck.**
+
 ---
 
 ## Dataset
@@ -124,7 +132,21 @@ Derived: `speedup = T_sequential / T_parallel`, `efficiency = speedup / workers`
 
 Accuracy is a sanity check only: identical across configurations, as it should be when the batches are identical.
 
+![Layer B null result](figures/06_layerB_null_result.png)
+
+The lower panel is the cost of parallelising a stage that is not the bottleneck: one thread raises CPU use by 67% for no throughput gain at all.
+
 Raw data: [`results/rgb_full/`](results/rgb_full/)
+
+### Preprocessing without a GPU — where the scaling actually happens
+
+![Speedup vs worker count](figures/01_speedup_vs_workers.png)
+
+Multiprocessing scales to about 5× on both machines, peaking near the core count and declining past it. Multithreading behaves **differently on the two machines**: flat in the sandbox, but reaching 1.9× on Kaggle. The likely reason is that Kaggle's baseline is partly I/O-bound on its slower network storage, giving threads waiting to overlap, whereas the sandbox baseline was compute-saturated.
+
+Raw data: [`results/layerA/`](results/layerA/) and [`results/layerA_kaggle/`](results/layerA_kaggle/)
+
+All seven figures, with captions: [`figures/`](figures/)
 
 ---
 
@@ -134,7 +156,13 @@ Raw data: [`results/rgb_full/`](results/rgb_full/)
 
 **Do more workers mean more speed?** No. Throughput peaks at 1 worker and declines. Efficiency falls as 1/w.
 
-**Why can too many workers slow things down?** Each process worker carries its own interpreter and buffers, costing up to 159 MB, and all of them compete for 2 physical cores. When the queue is already full, that cost buys nothing.
+**Why can too many workers slow things down?** Each process worker carries its own interpreter and buffers, costing up to 159 MB here and **1,040 MB** on MS with array payloads, and all of them compete for the same cores. When the queue is already full, that cost buys nothing.
+
+The largest single cost is moving decoded data back from the workers:
+
+![Payload ablation](figures/04_payload_ablation.png)
+
+Workers do identical CPU work but return either the decoded array or a single float, so any difference is purely transfer cost. It consumes **up to 45%** of the achievable speedup, and `process x1` on MS comes out at **0.55×** — slower than sequential, because one worker adds no parallelism yet pays full serialisation cost. Threads are the control: sharing memory, they are unaffected by payload size.
 
 **Does multithreading help?** No, and the context-switch counters show why. Threads share one GIL, so every handoff costs a context switch:
 
@@ -149,11 +177,31 @@ Raw data: [`results/rgb_full/`](results/rgb_full/)
 
 Context switching **rises with thread count but is flat across process count**, because each worker process has its own interpreter and its own GIL, so they never contend for one. `thread x8` also had the lowest GPU utilisation of any configuration. On a shorter run where the GPU had slack, the same configuration was **13.8% slower** than sequential after normalising for clock speed.
 
+The GIL is not assumed here, it is isolated by a control experiment:
+
+![GIL control experiment](figures/03_gil_control.png)
+
+A pure-Python loop holds the GIL and gains **nothing** from threads on either machine. SHA-256 releases it during the C call and scales nearly linearly. Same pool, same task count, same machine — the only variable is whether the work holds the GIL.
+
+The consequence is visible directly in CPU usage:
+
+![Busy cores](figures/02_busy_cores.png)
+
+Threads plateau around **2.4 of 8 cores** no matter how many are added. Processes reach **7.9**. Threads physically cannot use the machine on CPU-bound work.
+
+**One honest caveat.** The claim that threads never beat sequential on CPU-bound decoding holds in the sandbox (0.98×) but **fails on Kaggle** (2.00×) for identical code. Only the control experiment above is consistent across both machines. The universal claim is therefore narrower: *threads do not help work that holds the GIL*. Whether real decoding holds it is platform and library dependent.
+
 **What does worker startup cost?** On Linux with `fork`, very little: 0.11 s sequential rising to 0.65 s for 8 worker processes, and the first epoch is only 0.1–0.8% slower than the steady-state epoch. This is **OS-dependent**: on Windows, which must `spawn`, a comparable published benchmark paid 5.5 s for 2 workers and 11.1 s for 4, enough to change which configuration wins a short training run. On `fork` that trade-off does not arise.
 
 **What is the bottleneck: CPU, RAM, storage or GPU?** The **GPU**, decisively: 99.8% utilisation, 0.2% idle. RAM and storage are not constraints, and the CPU is only 0.88 cores busy in sequential out of 4 logical.
 
 **Did the GPU wait for data?** Not here, 0.2% idle. Earlier runs appeared to show 37% idle, but that was traced to a cold OS page cache in the first-run baseline, not to the data pipeline.
+
+**Does storage ever become the bottleneck?** Not its bandwidth — it never exceeded 46% of the measured ceiling. But its *latency* matters, and parallelism hides it:
+
+![I/O latency hiding](figures/07_io_latency_hiding.png)
+
+The cost of an empty page cache falls monotonically as workers are added: while one worker blocks on storage, the others keep decoding, whereas sequential absorbs the wait in full. The effect is far stronger on Kaggle, whose network-mounted storage is roughly 4× slower than the sandbox NVMe. There, cold-cache speedup actually **exceeds** warm-cache speedup — 11.69× against 5.77× at 16 workers. Threads are almost immune to a cold cache, since file reads release the GIL.
 
 **Best configuration?** Sequential. It matches the fastest configuration within noise while using the least CPU and RAM.
 
