@@ -1,0 +1,110 @@
+==============================================================================
+mode=FULL  dataset=RGB  epochs=2  repeats=3  batch=64
+platform=kaggle  device=cuda  torch_threads=2
+cpu: Intel(R) Xeon(R) CPU @ 2.00GHz  cores 2 physical / 4 logical
+gpu: Tesla T4  telemetry backend: nvml
+root=/kaggle/input/datasets/kelvinanshary/operating-systems/EuroSAT_RGB
+files found=27000  classes=10  using=27000
+
+--- warm-up: reading every file once so all runs see a warm page cache ---
+read 87.6 MB in 25.8s
+
+--- checking that all three methods produce identical batches ---
+  sequential vs thread x2: IDENTICAL
+  sequential vs process x2: IDENTICAL
+
+--- baselines (for the Amdahl bound and the ETA) ---
+
+--- GPU heat soak: until temperature is stable (min 60s, max 180s) ---
+     0s  temp 73.0  clock 585.0
+     17s  temp 81.0  clock 705.0
+     33s  temp 80.0  clock 705.0
+     48s  temp 77.0  clock 825.0
+  done after 60s: temp 73.0 -> 75.0 C, clock 585.0 -> 855.0 MHz
+decode, 1 core      :    589.7 img/s
+train step (no I/O) :    316.5 img/s
+loading share       :  34.9%   ceiling vs a FULLY SERIAL loop 1.54x
+per batch           : decode 109 ms on 1 core, GPU step 202 ms
+
+plan: 12 configs x 3 repeats = 36 runs
+rough ETA: 127 min  (time budget 9.0 h)
+
+==============================================================================
+running sweep -> /kaggle/working/layerB_rgb_full_runs.csv
+==============================================================================
+[ 1/36] process          w=2 r=0    309.3 ips  total   174.2s  start  0.24s  block   0.5%  cpu 1.51 cores  gpu 99.76%  clk 759.98  temp 76.97  acc 0.868  | ~102 min left
+[ 2/36] thread           w=8 r=0    307.8 ips  total   175.1s  start  0.56s  block   0.7%  cpu 1.48 cores  gpu 99.3%  clk 763.73  temp 77.04  acc 0.867  | ~99 min left
+[ 3/36] thread           w=1 r=0    308.3 ips  total   174.8s  start  0.14s  block   1.2%  cpu 1.45 cores  gpu 99.75%  clk 756.83  temp 77.02  acc 0.868  | ~96 min left
+[ 4/36] process          w=3 r=0    308.9 ips  total   174.4s  start  0.29s  block   0.5%  cpu 1.54 cores  gpu 99.75%  clk 758.43  temp 77.06  acc 0.870  | ~93 min left
+[ 5/36] process          w=4 r=0    308.9 ips  total   174.4s  start  0.36s  block   0.4%  cpu 1.53 cores  gpu 99.81%  clk 760.7  temp 76.98  acc 0.866  | ~90 min left
+[ 6/36] process          w=1 r=0    307.8 ips  total   175.1s  start  0.27s  block   4.8%  cpu 1.48 cores  gpu 99.52%  clk 760.52  temp 77.07  acc 0.864  | ~88 min left
+[ 7/36] process          w=8 r=0    307.2 ips  total   175.4s  start  0.63s  block   0.6%  cpu 1.54 cores  gpu 99.76%  clk 756.42  temp 77.13  acc 0.867  | ~85 min left
+[ 8/36] thread           w=2 r=0    308.5 ips  total   174.7s  start  0.15s  block   1.8%  cpu 1.48 cores  gpu 99.74%  clk 755.05  temp 77.04  acc 0.868  | ~82 min left
+[ 9/36] thread           w=4 r=0    307.9 ips  total   175.0s  start  0.23s  block   0.4%  cpu 1.49 cores  gpu 99.82%  clk 755.52  temp 77.07  acc 0.865  | ~79 min left
+[10/36] sequential       w=0 r=0    308.7 ips  total   174.6s  start  0.12s  block  63.3%  cpu 0.84 cores  gpu 99.83%  clk 756.91  temp 77.05  acc 0.866  | ~76 min left
+[11/36] sequential_nopin w=0 r=0    307.0 ips  total   175.5s  start  0.13s  block  59.0%  cpu 0.78 cores  gpu 98.65%  clk 769.32  temp 77.06  acc 0.868  | ~73 min left
+[12/36] process          w=6 r=0    307.6 ips  total   175.2s  start  0.52s  block   0.5%  cpu 1.53 cores  gpu 99.69%  clk 755.51  temp 77.07  acc 0.870  | ~70 min left
+[13/36] process          w=6 r=1    307.6 ips  total   175.2s  start  0.49s  block   0.5%  cpu 1.53 cores  gpu 99.67%  clk 756.05  temp 77.12  acc 0.868  | ~67 min left
+[14/36] sequential_nopin w=0 r=1    309.9 ips  total   173.9s  start  0.11s  block  54.0%  cpu 0.84 cores  gpu 99.78%  clk 763.32  temp 77.04  acc 0.865  | ~64 min left
+[15/36] process          w=4 r=1    307.9 ips  total   175.0s  start  0.38s  block   0.4%  cpu 1.53 cores  gpu 99.73%  clk 755.2  temp 77.06  acc 0.866  | ~61 min left
+[16/36] thread           w=2 r=1    308.6 ips  total   174.6s  start  0.14s  block   0.4%  cpu 1.48 cores  gpu 99.76%  clk 756.89  temp 77.11  acc 0.865  | ~58 min left
+[17/36] process          w=8 r=1    307.2 ips  total   175.4s  start  0.67s  block   0.7%  cpu 1.53 cores  gpu 99.65%  clk 755.27  temp 77.08  acc 0.866  | ~56 min left
+[18/36] process          w=1 r=1    309.1 ips  total   174.3s  start  0.17s  block   1.0%  cpu 1.5 cores  gpu 99.89%  clk 758.44  temp 77.0  acc 0.866  | ~53 min left
+[19/36] process          w=3 r=1    308.7 ips  total   174.6s  start  0.29s  block   0.5%  cpu 1.52 cores  gpu 99.72%  clk 758.49  temp 77.02  acc 0.867  | ~50 min left
+[20/36] thread           w=8 r=1    306.2 ips  total   176.0s  start  0.56s  block   0.7%  cpu 1.48 cores  gpu 99.4%  clk 752.35  temp 77.15  acc 0.865  | ~47 min left
+[21/36] process          w=2 r=1    308.2 ips  total   174.9s  start  0.23s  block   0.5%  cpu 1.51 cores  gpu 99.8%  clk 756.09  temp 77.1  acc 0.865  | ~44 min left
+[22/36] thread           w=1 r=1    309.8 ips  total   173.9s  start  0.12s  block   0.8%  cpu 1.47 cores  gpu 99.88%  clk 763.07  temp 76.98  acc 0.865  | ~41 min left
+[23/36] thread           w=4 r=1    307.9 ips  total   175.0s  start  0.24s  block   0.3%  cpu 1.49 cores  gpu 99.66%  clk 755.23  temp 77.08  acc 0.864  | ~38 min left
+[24/36] sequential       w=0 r=1    309.4 ips  total   174.2s  start  0.11s  block  54.9%  cpu 0.93 cores  gpu 99.79%  clk 758.15  temp 77.05  acc 0.866  | ~35 min left
+[25/36] thread           w=8 r=2    307.0 ips  total   175.5s  start  0.54s  block   0.7%  cpu 1.47 cores  gpu 99.39%  clk 757.82  temp 77.13  acc 0.866  | ~32 min left
+[26/36] thread           w=4 r=2    308.8 ips  total   174.5s  start  0.23s  block   0.3%  cpu 1.48 cores  gpu 99.62%  clk 759.83  temp 77.0  acc 0.869  | ~29 min left
+[27/36] process          w=8 r=2    307.9 ips  total   175.0s  start  0.67s  block   0.6%  cpu 1.53 cores  gpu 99.66%  clk 758.71  temp 77.01  acc 0.862  | ~26 min left
+[28/36] sequential       w=0 r=2    308.9 ips  total   174.4s  start  0.11s  block  59.9%  cpu 0.88 cores  gpu 99.91%  clk 756.3  temp 77.07  acc 0.864  | ~23 min left
+[29/36] process          w=2 r=2    308.7 ips  total   174.6s  start  0.25s  block   0.5%  cpu 1.52 cores  gpu 99.76%  clk 758.46  temp 77.12  acc 0.865  | ~20 min left
+[30/36] process          w=4 r=2    308.7 ips  total   174.6s  start  0.38s  block   0.5%  cpu 1.53 cores  gpu 99.71%  clk 759.49  temp 77.05  acc 0.867  | ~18 min left
+[31/36] thread           w=2 r=2    307.3 ips  total   175.4s  start  0.14s  block   0.4%  cpu 1.48 cores  gpu 99.74%  clk 754.0  temp 77.16  acc 0.865  | ~15 min left
+[32/36] thread           w=1 r=2    309.0 ips  total   174.4s  start  0.12s  block   0.9%  cpu 1.48 cores  gpu 99.77%  clk 758.52  temp 77.03  acc 0.867  | ~12 min left
+[33/36] sequential_nopin w=0 r=2    309.6 ips  total   174.1s  start  0.14s  block  55.5%  cpu 0.82 cores  gpu 99.78%  clk 761.35  temp 77.07  acc 0.862  | ~9 min left
+[34/36] process          w=6 r=2    308.9 ips  total   174.5s  start  0.53s  block   0.5%  cpu 1.53 cores  gpu 99.78%  clk 761.38  temp 77.09  acc 0.866  | ~6 min left
+[35/36] process          w=3 r=2    307.5 ips  total   175.2s  start  0.29s  block   0.5%  cpu 1.52 cores  gpu 99.89%  clk 753.98  temp 77.06  acc 0.866  | ~3 min left
+[36/36] process          w=1 r=2    305.1 ips  total   176.6s  start  0.17s  block  12.3%  cpu 1.38 cores  gpu 98.56%  clk 755.17  temp 77.1  acc 0.863  | ~0 min left
+
+==============================================================================
+SUMMARY  RGB / FULL  (36 ok runs)  speedup = T_sequential / T_parallel
+==============================================================================
+method            w  n        total s  steady ep s          img/s  spdup st.spd   eff block% cores  RAM+MB  gpu% clkMHz  temp  lim%   acc
+sequential        0  3   174.4+-0.2           87.0   309.0+-0.4     1.00   1.00     -   59.3  0.88      -7  99.8    757  77.1  99.9 0.866
+sequential_nopin  0  3   174.5+-0.9           87.1   308.8+-1.6     1.00   1.00     -   56.2  0.81       3  99.4    765  77.1  99.8 0.865
+thread            1  3   174.4+-0.4           87.0   309.1+-0.8     1.00   1.00  1.00    1.0  1.47     -12  99.8    759  77.0  99.8 0.866
+thread            2  3   174.9+-0.4           87.6   308.1+-0.7     1.00   0.99  0.50    0.9  1.48       0  99.7    755  77.1  99.8 0.866
+thread            4  3   174.9+-0.3           87.4   308.2+-0.5     1.00   1.00  0.25    0.4  1.49       0  99.7    757  77.0  99.8 0.866
+thread            8  3   175.5+-0.5           87.8   307.0+-0.8     0.99   0.99  0.12    0.7  1.48      -2  99.4    758  77.1  99.4 0.866
+process           1  3   175.3+-1.2           87.7   307.3+-2.1     0.99   0.99  0.99    6.0  1.45      -1  99.3    758  77.1  99.8 0.864
+process           2  3   174.6+-0.3           87.1   308.7+-0.5     1.00   1.00  0.50    0.5  1.51      40  99.8    758  77.1  99.8 0.866
+process           3  3   174.7+-0.4           87.3   308.4+-0.8     1.00   1.00  0.33    0.5  1.53      43  99.8    757  77.0  99.8 0.868
+process           4  3   174.7+-0.3           87.0   308.5+-0.5     1.00   1.00  0.25    0.4  1.53      50  99.8    758  77.0  99.8 0.866
+process           6  3   175.0+-0.4           87.2   308.0+-0.7     1.00   1.00  0.17    0.5  1.53     111  99.7    758  77.1  99.7 0.868
+process           8  3   175.3+-0.2           87.4   307.4+-0.4     0.99   1.00  0.12    0.6  1.53     159  99.7    757  77.1  99.8 0.865
+
+--- what the data says ---
+fastest: thread x1  174.4s  speedup 1.00x  (most any loader could gain over the measured sequential: 1.02x)
+pinned memory, sequential: 309.0 img/s pinned vs 308.8 pageable (1.00x); GPU util 99.8% vs 99.4%; fully serial prediction 206.0
+runner-up: sequential x0  174.4s  -> gap 0.0s vs combined SD 0.6s: NOT distinguishable at this n
+thread: img/s by workers 1:309, 2:308, 4:308, 8:307  -> peak at 1; more workers is NOT always faster
+process: img/s by workers 1:307, 2:309, 3:308, 4:309, 6:308, 8:307  -> peak at 2; more workers is NOT always faster
+
+--- GPU throttling check (runs with workers >= 1) ---
+corr(img/s, SM clock)   = +0.62   strong positive -> clock explains the differences
+corr(img/s, run order)  = -0.19   strong negative -> later runs slower (drift)
+corr(run order, temp)   = +0.27
+SM clock range 752-764 MHz; perf-limit throttle active 99.8% of samples
+
+files written:
+  /kaggle/working/layerB_rgb_full_config.json  (2.8 KB)
+  /kaggle/working/layerB_rgb_full_environment.json  (0.5 KB)
+  /kaggle/working/layerB_rgb_full_epochs.csv  (3.5 KB)
+  /kaggle/working/layerB_rgb_full_runs.csv  (8.6 KB)
+  /kaggle/working/layerB_rgb_full_summary.csv  (5.4 KB)
+  /kaggle/working/layerB_rgb_full_summary.md  (1.6 KB)
+  /kaggle/working/layerB_rgb_full_timeseries.csv  (2041.9 KB)
+total wall time 109.3 min

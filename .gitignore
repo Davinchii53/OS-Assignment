@@ -1,0 +1,18 @@
+# data is downloaded, never committed
+data/
+*.zip
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# os
+.DS_Store
+Thumbs.db
+
+# large raw telemetry: timeseries.csv can reach tens of MB.
+# Commit it deliberately if it is needed as evidence.
+# results/**/timeseries.csv

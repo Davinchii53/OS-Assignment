@@ -1,0 +1,23 @@
+{
+  "platform": "kaggle",
+  "hostname": "048a08b150fe",
+  "cpu_model": "Intel(R) Xeon(R) CPU @ 2.00GHz",
+  "cpu_cores_physical": 2,
+  "cpu_cores_logical": 4,
+  "hyperthreading": true,
+  "ram_gb": 31.35,
+  "gpu": {
+    "available": true,
+    "name": "Tesla T4",
+    "count": 2,
+    "vram_gb": 14.56,
+    "capability": "7.5",
+    "driver": "580.159.04\n580.159.04"
+  },
+  "os": "Linux 6.12.90+",
+  "python": "3.12.13",
+  "torch": "2.10.0+cu128",
+  "numpy": "2.0.2",
+  "torch_num_threads": 4,
+  "omp_num_threads": "4"
+}

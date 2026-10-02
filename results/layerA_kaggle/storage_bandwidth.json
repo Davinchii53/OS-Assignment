@@ -1,0 +1,10 @@
+{
+  "RGB": {
+    "warm_mb_s": 16.5,
+    "cold_mb_s": 5.8
+  },
+  "MS": {
+    "warm_mb_s": 467.9,
+    "cold_mb_s": 117.2
+  }
+}

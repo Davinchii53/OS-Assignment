@@ -1,0 +1,21 @@
+{
+  "platform": "kaggle",
+  "cpu_model": "Intel(R) Xeon(R) CPU @ 2.00GHz",
+  "cpu_cores_physical": 2,
+  "cpu_cores_logical": 4,
+  "ram_total_gb": 31.35,
+  "gpu_name": "Tesla T4",
+  "gpu_count_visible": 2,
+  "gpu_vram_gb": 14.56,
+  "os": "Linux 6.12.90+",
+  "python": "3.12.13",
+  "gil_enabled": true,
+  "torch": "2.10.0+cu128",
+  "torchvision": "0.25.0+cu128",
+  "numpy": "2.0.2",
+  "cuda": "12.8",
+  "cudnn": 91002,
+  "mp_start_method": "fork",
+  "torch_threads": 2,
+  "omp_num_threads": "2"
+}
