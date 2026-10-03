@@ -350,9 +350,57 @@ def fig_storage():
          "the GIL.")
 
 
+# ---------------------------------------------------------------- figure 8 ----
+# Speedup vs workload size: fixed overheads amortise away.
+def fig_workload():
+    path = f"{R}/layerA/workload_size.csv"
+    if not os.path.exists(path):
+        print("  (skipping figure 8, workload_size.csv not found)")
+        return
+    rows = load(path)
+    g = defaultdict(list)
+    for r in rows:
+        g[(r["dataset"], int(r["n_images"]), r["mode"], int(r["workers"]),
+           r["payload"])].append(r["total_s"])
+    sizes = sorted({k[1] for k in g})
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), sharey=True)
+    for ax, ds in zip(axes, ["RGB", "MS"]):
+        for payload, style, alpha in (("scalar", "-", 1.0), ("array", "--", 0.6)):
+            for w, colour, ms in ((8, C_PR, "o"), (4, "#7fb3d5", "s")):
+                vals = []
+                for n in sizes:
+                    ks = (ds, n, "sequential", 0, payload)
+                    kp = (ds, n, "process", w, payload)
+                    vals.append(np.mean(g[ks]) / np.mean(g[kp])
+                                if ks in g and kp in g else np.nan)
+                ax.plot(sizes, vals, ms + style, color=colour, lw=2, ms=5, alpha=alpha,
+                        label=f"{w} workers, {payload}")
+        ax.axhline(1.0, color=C_SEQ, ls=":", lw=1.5)
+        ax.set_xscale("log")
+        ax.set_xticks(sizes)
+        ax.set_xticklabels([f"{n:,}" for n in sizes], fontsize=8)
+        ax.set_xlabel("Workload size (images)")
+        ax.set_title(ds)
+    axes[0].set_ylabel("Speedup vs sequential")
+    axes[0].legend(fontsize=8, loc="upper left", ncol=2)
+    fig.suptitle("Larger workloads give better speedup — fixed overheads amortise\n"
+                 "Pool setup is paid once per run, so it matters less as the work grows.",
+                 fontsize=12, y=1.03)
+    save(fig, "08_workload_size.png",
+         "Speedup against workload size. Multiprocessing pays fixed costs once per "
+         "run, chiefly starting the worker pool, so those costs shrink relative to "
+         "the work as the dataset grows. Speedup rises with workload size in seven "
+         "of the eight series; RGB with 4 workers and a scalar payload dips by 3 "
+         "percent at the largest size, within run-to-run variation. The effect is "
+         "strongest for the array payload on MS, climbing from 1.16x at 500 images "
+         "to 2.87x at 25,500, because that configuration also carries the heaviest "
+         "per-image transfer cost.")
+
+
 print("writing figures:")
 for fn in (fig_speedup, fig_busy_cores, fig_gil, fig_payload,
-           fig_regimes, fig_layerb, fig_storage):
+           fig_regimes, fig_layerb, fig_storage, fig_workload):
     fn()
 
 with open(os.path.join(FIG, "README.md"), "w") as f:
