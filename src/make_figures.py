@@ -350,9 +350,134 @@ def fig_storage():
          "the GIL.")
 
 
+# ---------------------------------------------------------------- figure 8 ----
+# Speedup vs workload size: fixed overheads amortise away.
+def fig_workload():
+    path = f"{R}/layerA/workload_size.csv"
+    if not os.path.exists(path):
+        print("  (skipping figure 8, workload_size.csv not found)")
+        return
+    rows = load(path)
+    g = defaultdict(list)
+    for r in rows:
+        g[(r["dataset"], int(r["n_images"]), r["mode"], int(r["workers"]),
+           r["payload"])].append(r["total_s"])
+    sizes = sorted({k[1] for k in g})
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), sharey=True)
+    for ax, ds in zip(axes, ["RGB", "MS"]):
+        for payload, style, alpha in (("scalar", "-", 1.0), ("array", "--", 0.6)):
+            for w, colour, ms in ((8, C_PR, "o"), (4, "#7fb3d5", "s")):
+                vals = []
+                for n in sizes:
+                    ks = (ds, n, "sequential", 0, payload)
+                    kp = (ds, n, "process", w, payload)
+                    vals.append(np.mean(g[ks]) / np.mean(g[kp])
+                                if ks in g and kp in g else np.nan)
+                ax.plot(sizes, vals, ms + style, color=colour, lw=2, ms=5, alpha=alpha,
+                        label=f"{w} workers, {payload}")
+        ax.axhline(1.0, color=C_SEQ, ls=":", lw=1.5)
+        ax.set_xscale("log")
+        ax.set_xticks(sizes)
+        ax.set_xticklabels([f"{n:,}" for n in sizes], fontsize=8)
+        ax.set_xlabel("Workload size (images)")
+        ax.set_title(ds)
+    axes[0].set_ylabel("Speedup vs sequential")
+    axes[0].legend(fontsize=8, loc="upper left", ncol=2)
+    fig.suptitle("Larger workloads give better speedup — fixed overheads amortise\n"
+                 "Pool setup is paid once per run, so it matters less as the work grows.",
+                 fontsize=12, y=1.03)
+    save(fig, "08_workload_size.png",
+         "Speedup against workload size. Multiprocessing pays fixed costs once per "
+         "run, chiefly starting the worker pool, so those costs shrink relative to "
+         "the work as the dataset grows. Speedup rises with workload size in seven "
+         "of the eight series; RGB with 4 workers and a scalar payload dips by 3 "
+         "percent at the largest size, within run-to-run variation. The effect is "
+         "strongest for the array payload on MS, climbing from 1.16x at 500 images "
+         "to 2.87x at 25,500, because that configuration also carries the heaviest "
+         "per-image transfer cost.")
+
+
+# ---------------------------------------------------------------- figure 9 ----
+# Throughput in images/second vs worker count. Slot 10b.
+def fig_throughput():
+    sb = load(f"{R}/layerA/summary.csv")
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
+    for ax, ds in zip(axes, ["RGB", "MS"]):
+        seq = [r["throughput_ips"] for r in sb if r["dataset"] == ds
+               and r["mode"] == "sequential" and r["payload"] == "scalar"]
+        for mode, colour, label in (("thread", C_TH, "Multithreading"),
+                                    ("process", C_PR, "Multiprocessing")):
+            w, v = series(sb, ds, mode, "scalar", "throughput_ips")
+            if w:
+                ax.plot(w, v, "o-", color=colour, label=label, lw=2, ms=6)
+        if seq:
+            ax.axhline(seq[0], color=C_SEQ, ls="--", lw=1.5,
+                       label=f"Sequential ({seq[0]:.0f} img/s)")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks([1, 2, 4, 8, 16])
+        ax.set_xticklabels(["1", "2", "4", "8", "16"])
+        ax.set_xlabel("Number of workers")
+        ax.set_title(ds)
+        ax.legend(fontsize=8.5, loc="upper left")
+    axes[0].set_ylabel("Throughput (images / second)")
+    fig.suptitle("Throughput vs worker count — preprocessing only, no GPU\n"
+                 "Absolute rates behind the speedup curves. Sandbox, 4 physical "
+                 "cores, scalar payload.", fontsize=12, y=1.03)
+    save(fig, "09_throughput_vs_workers.png",
+         "Throughput in images per second against worker count, which is the "
+         "absolute measurement underlying the speedup ratios. Multiprocessing "
+         "rises from roughly 2,500 to 12,500 images per second on RGB, while "
+         "multithreading never moves far from the sequential line. Both peak at 8 "
+         "workers, the logical core count, and flatten or fall at 16.")
+
+
+# --------------------------------------------------------------- figure 10 ----
+# GPU utilisation vs worker count, Layer B. Slot 14a.
+def fig_gpu_util():
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.4), sharey=True)
+    for ax, (path, ds) in zip(axes, [(f"{R}/rgb_full/summary.csv", "RGB"),
+                                     (f"{R}/ms_full/summary.csv", "MS")]):
+        rows = load(path)
+        for meth, colour, label in (("thread", C_TH, "Multithreading"),
+                                    ("process", C_PR, "Multiprocessing")):
+            pts = sorted((int(r["workers"]), r["gpu_util_mean"]) for r in rows
+                         if r["method"] == meth and r["gpu_util_mean"] is not None)
+            if pts:
+                ax.plot([p[0] for p in pts], [p[1] for p in pts], "o-",
+                        color=colour, label=label, lw=2, ms=6)
+        sq = [r["gpu_util_mean"] for r in rows if r["method"] == "sequential"]
+        if sq:
+            ax.axhline(sq[0], color=C_SEQ, ls="--", lw=1.8,
+                       label=f"Sequential ({sq[0]:.1f}%)")
+        ax.axhline(100, color="#bbb", ls=":", lw=1)
+        ax.set_xscale("log", base=2)
+        ax.set_xticks([1, 2, 4, 8])
+        ax.set_xticklabels(["1", "2", "4", "8"])
+        ax.set_xlabel("Number of workers")
+        ax.set_title(ds)
+        ax.set_ylim(88, 101.5)
+        ax.legend(fontsize=8.5, loc="lower right")
+    axes[0].set_ylabel("GPU utilisation (%)")
+    fig.suptitle("Did the GPU wait for data? — Tesla T4, 27,000 images, n=3\n"
+                 "RGB is saturated even sequentially. MS leaves 6.3% idle; one "
+                 "thread recovers it, one process only partly.", fontsize=12, y=1.03)
+    save(fig, "10_gpu_utilisation.png",
+         "GPU utilisation against worker count for both dataset variants. On RGB "
+         "the GPU is already 99.8 percent busy with no workers at all, so there is "
+         "nothing for a loader to recover. On MS sequential leaves 6.3 percent idle, "
+         "because decoding a batch takes 190.6 ms against the GPU's 198.5 ms. A "
+         "single thread lifts utilisation to 99.6 percent, but a single process "
+         "reaches only 96.2 percent, since one worker alone cannot reliably stay "
+         "ahead of the GPU at this balance point. From two workers upward both "
+         "methods exceed 99 percent. This is the direct answer to whether the GPU "
+         "waited for data.")
+
+
 print("writing figures:")
 for fn in (fig_speedup, fig_busy_cores, fig_gil, fig_payload,
-           fig_regimes, fig_layerb, fig_storage):
+           fig_regimes, fig_layerb, fig_storage, fig_workload,
+           fig_throughput, fig_gpu_util):
     fn()
 
 with open(os.path.join(FIG, "README.md"), "w") as f:

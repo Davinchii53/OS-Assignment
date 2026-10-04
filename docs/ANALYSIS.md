@@ -80,7 +80,7 @@ Returning data instead of a single number consumes **up to 45%** of the achievab
 
 ## 4. Does multithreading improve performance?
 
-**It depends on the kind of work — and we proved the rule.**
+**It depends on the kind of work — and, as it turned out, on the machine. We proved the rule for the former and had to qualify the latter.**
 
 GIL control experiment (16 tasks split across N workers):
 
@@ -100,9 +100,34 @@ On real decoding:
 
 **Threads reverse sign** when the work shifts from CPU-bound to I/O-bound, because file reads release the GIL.
 
-The most compact evidence: **threads plateau at 2.4 busy cores** out of 8 available, regardless of thread count (2, 4, 8 and 16 are identical). Processes reach **7.9 cores**. Threads physically cannot use the machine.
+The most compact evidence: **threads plateau at 2.4 busy cores** out of 8 available, regardless of thread count (2, 4, 8 and 16 are identical). Processes reach **7.9 cores**. Threads physically cannot use the sandbox machine.
 
-**Conclusion: threads help only when the work releases the GIL.** This single mechanism explains all four results above.
+### An important limit on this answer
+
+Everything above is from the **sandbox**. Repeating the identical experiment on Kaggle gave a **different answer for decoding**:
+
+| Config | Sandbox | Kaggle |
+|---|---|---|
+| thread ×4 (RGB, scalar) | **0.98×** | **1.85×** |
+| thread ×16 (RGB, array) | 0.92× | **2.00×** |
+
+Recovering the implied serial fraction from Amdahl's law: **sandbox f ≈ 1.03** (the GIL dominates completely) against **Kaggle f ≈ 0.00** (decoding runs essentially outside it) — for byte-identical code.
+
+The **control experiment is consistent on both machines** (pure Python threads give 0.87–1.00× everywhere), so it is specifically real decoding that differs, not the GIL mechanism. Three candidate causes, none verified:
+
+1. **numpy version** — 2.4.6 in the sandbox against 2.0.2 on Kaggle, with different GIL-release behaviour in `mean`/`std`
+2. **The Kaggle baseline is partly I/O-bound** — its sequential run used only 0.69 of 4 cores, idle 31% of the time on storage roughly 4× slower, which gives threads waiting to overlap. The sandbox baseline was compute-saturated, leaving nothing to overlap
+3. **CPU microarchitecture** — Sapphire Rapids against EPYC Zen 2, changing the ratio of C-library work to interpreter work
+
+The second is the most likely, and it would also explain why Kaggle reached a *higher* process speedup (5.96×) than the sandbox (5.03×) despite having half the physical cores.
+
+**So the defensible conclusion is narrower than "multithreading does not help":**
+
+> **Threads do not help work that holds the GIL.** This is universal and proven by the control experiment on both machines.
+>
+> **Whether real decoding holds the GIL is platform- and library-dependent.** In the sandbox it effectively did (0.98×); on Kaggle it effectively did not (2.00×).
+
+This single mechanism still explains every measurement: pure Python holds the GIL (1.00×), SHA-256 releases it (3.04×), file I/O releases it (1.18× cold vs 0.89× warm), and numpy decoding releases it to a degree that depends on the platform.
 
 ---
 
@@ -161,7 +186,7 @@ With a cold cache the optimum shifts **higher** (16 rather than 8), because more
 
 **For the GPU training pipeline: no improvement is possible.** The GPU is already 99.8% busy, leaving 0.2% of headroom. All 12 configurations fall within 0.68% of each other, and four of them are **statistically slower** than sequential. The best configuration is **sequential**, because it matches the best performance while using the least CPU and memory.
 
-**For the preprocessing pipeline (no GPU): yes, substantially.** **Multiprocessing with 8 workers gives 5.03×**, while multithreading never beats sequential.
+**For the preprocessing pipeline (no GPU): yes, substantially.** **Multiprocessing with 8 workers gives 5.03×** in the sandbox, and 5.96× at 16 workers on Kaggle. Multithreading reached only 1.06× in the sandbox, though 2.00× on Kaggle — see the platform caveat under question 4. Multiprocessing is the better choice on both machines by a wide margin.
 
 Why 8 workers: it matches the machine's logical core count. Why processes and not threads: threads are capped at 2.4 cores by the GIL while processes reach 7.9. Why not 16: going beyond the core count adds context switching and memory without adding compute capacity.
 
@@ -171,7 +196,7 @@ Why 8 workers: it matches the machine's logical core count. Why processes and no
 
 **Reject.** Four independent pieces of evidence:
 
-1. **Adding threads almost always made things worse.** Range 0.84–1.06×, and capped at 2.4 cores regardless of thread count.
+1. **Adding threads gave little or nothing, and often made things worse.** Range 0.84–1.06× in the sandbox, capped at 2.4 of 8 cores regardless of thread count. Even where threads did help (2.00× on Kaggle), they never came close to multiprocessing's 5.96× on the same machine.
 2. **Processes peak then decline.** 8 workers 5.03×, 16 workers 4.97×.
 3. **In the GPU pipeline, adding any worker gained nothing**, and 6–8 workers were **significantly slower** (p = 0.034 and p < 0.001).
 4. **One worker can be slower than zero workers.** MS `process ×1` = **0.55×**.

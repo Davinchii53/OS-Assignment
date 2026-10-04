@@ -44,3 +44,21 @@ Layer B on RGB. Every configuration lands within 0.68 percent of sequential, and
 
 Cost of an empty page cache against worker count. The penalty falls monotonically as workers are added, because workers overlap their waiting while sequential absorbs it in full. The effect is far stronger on Kaggle, whose network-mounted storage is roughly four times slower than the sandbox NVMe. Threads are almost immune, since file reads release the GIL.
 
+## 08_workload_size.png
+
+![08_workload_size.png](08_workload_size.png)
+
+Speedup against workload size. Multiprocessing pays fixed costs once per run, chiefly starting the worker pool, so those costs shrink relative to the work as the dataset grows. Speedup rises with workload size in seven of the eight series; RGB with 4 workers and a scalar payload dips by 3 percent at the largest size, within run-to-run variation. The effect is strongest for the array payload on MS, climbing from 1.16x at 500 images to 2.87x at 25,500, because that configuration also carries the heaviest per-image transfer cost.
+
+## 09_throughput_vs_workers.png
+
+![09_throughput_vs_workers.png](09_throughput_vs_workers.png)
+
+Throughput in images per second against worker count, which is the absolute measurement underlying the speedup ratios. Multiprocessing rises from roughly 2,500 to 12,500 images per second on RGB, while multithreading never moves far from the sequential line. Both peak at 8 workers, the logical core count, and flatten or fall at 16.
+
+## 10_gpu_utilisation.png
+
+![10_gpu_utilisation.png](10_gpu_utilisation.png)
+
+GPU utilisation against worker count for both dataset variants. On RGB the GPU is already 99.8 percent busy with no workers at all, so there is nothing for a loader to recover. On MS sequential leaves 6.3 percent idle, because decoding a batch takes 190.6 ms against the GPU's 198.5 ms. A single thread lifts utilisation to 99.6 percent, but a single process reaches only 96.2 percent, since one worker alone cannot reliably stay ahead of the GPU at this balance point. From two workers upward both methods exceed 99 percent. This is the direct answer to whether the GPU waited for data.
+
